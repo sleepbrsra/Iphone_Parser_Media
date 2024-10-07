@@ -85,20 +85,14 @@ def connect_iphone():
     print("iPhone успешно подключен и смонтирован.")
 
 
-def copy_with_unique_name(src, dst):
+def copy_with_unique_name(src, dst, repeat_dir):
     """Копирование файла с добавлением суффикса, если файл с таким именем уже существует."""
     if not os.path.exists(dst):
         shutil.copy2(src, dst)
     else:
-        base, extension = os.path.splitext(dst)
-        counter = 1
-        new_dst = f"{base}_{counter}{extension}"
-        while os.path.exists(new_dst):
-            counter += 1
-            new_dst = f"{base}_{counter}{extension}"
-        shutil.copy2(src, new_dst)
-        print(f"Файл с таким же именем найден. Новый файл сохранён как {new_dst}")
-
+        # Перемещение в папку повторяющихся файлов
+        shutil.copy2(src, os.path.join(repeat_dir, os.path.basename(src)))
+        print(f"Файл с таким же именем найден. Файл перемещен в папку 'repeat': {os.path.basename(src)}")
 
 def download_photos(file_type):
     connect_iphone()
@@ -110,7 +104,8 @@ def download_photos(file_type):
         'photos': os.path.join(download_directory, 'photos'),
         'videos': os.path.join(download_directory, 'videos'),
         'gifs': os.path.join(download_directory, 'gifs'),
-        'others': os.path.join(download_directory, 'others')
+        'others': os.path.join(download_directory, 'others'),
+        'repeat': os.path.join(download_directory, 'repeat')  # Папка для повторяющихся файлов
     }
 
     for subdir in subdirs.values():
@@ -120,7 +115,7 @@ def download_photos(file_type):
     extensions = {
         'photos': ('.jpg', '.jpeg', '.png', '.heic'),
         'videos': ('.mp4', '.mov'),
-        'gifs': ('.gif'),
+        'gifs': ('.gif',),
     }
 
     if file_type == 'all':
@@ -160,12 +155,13 @@ def download_photos(file_type):
             else:
                 destination = os.path.join(subdirs['others'], file)
 
-            copy_with_unique_name(os.path.join(root, file), destination)  # Используем уникальное имя
+            copy_with_unique_name(os.path.join(root, file), destination, subdirs['repeat'])  # Передаем папку для повторов
             downloaded_photos += 1
             progress_bar(downloaded_photos, total_photos)
 
     print(f"\nСкачивание завершено. Скачано {downloaded_photos} файлов.")
     deactivate_iphone()
+
 
 
 def progress_bar(current, total):
